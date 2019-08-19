@@ -3,9 +3,9 @@
 
 NAME=safari-ctl
 BINNAME=safari-ctl
-VERSION=0.0.1
-DESCRIPTION=a CLI tool for MacOS to control Safari. (get/set/copy URL/run JavaScript(click/fill form/get value)/search/get title).
-KEYWORDS=safari javascript injection URL copy fill form clik command-line command line commandline tool cli 
+VERSION=0.1.2
+DESCRIPTION=A Command Line Tool to control Safari for MacOS. (Browsing/FillingForm/GetSetCopyURL/JavascriptInjection/GetTitle/Search)
+KEYWORDS=safari javascript injection URL automatic automation browsing copy fill form clik command-line command line commandline tool cli 
 NODEVER=8
 LICENSE=MIT
 

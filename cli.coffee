@@ -1,8 +1,5 @@
 #!/usr/bin/env coffee
 GetOpt=require '@kssfilo/getopt'
-Fs=require 'fs'
-Path=require 'path'
-Util=require 'util'
 OsaScript=require 'node-osascript'
 
 AppName="@PARTPIPE@BINNAME@PARTPIPE@"
@@ -33,24 +30,31 @@ ctx={
 	doActivate:false
 	javaScript:null
 	query:null
+	text:null
 }
 
 optUsages=
-	h:["command","show help and command list.if you specify command name, you can see details."]
-	"?":["command",""]
+	h:"show this help"
 	d:"debug mode"
 	p:"print current Safari's URL(default)"
+	t:"print current Safari's title"
+	g:"print selected string on current Safari's tab"
 	c:"copy current Safari's URL into the clipboard"
 	s:["URL","set <URL> to Safari's active tab"]
 	S:["URL","same as -s but set focus to Safari"]
 	q:["query","search <query> to Safari's active tab"]
 	Q:["URL","same as -q but set focus to Safari"]
-	g:"print selected string on current Safari's tab"
-	j:["javascript","run <javascript> on active tab(You must enable the 'Allow JavaScript from Apple Events' option in Safari's Develop menu to)"]
-	J:["javascript","same as s but set focus to Safari"]
+	m:"marks all <a> link with number to click by next -a command(*)"
+	a:["number","click <number> link. you can know link number by -m command(*)"]
+	M:"marks all <input> with number to click/set by next -A command(*)"
+	A:["number","click <number> input. you can know input number by -M command(*)"]
+	I:["string","works with -A, Input <string> instead of click. for filling form(*)"]
+	b:"history back(*)"
+	j:["javascript","run <javascript> on active tab(*)"]
+	J:["javascript","same as s but set focus to Safari(*)"]
 
 try
-	GetOpt.setopt 'h?dcs:S:tj:J:gq:Q:p'
+	GetOpt.setopt 'h?dptgcs:S:q:Q:ma:MA:I:bj:J:'
 catch e
 	switch e.type
 		when 'unknown'
@@ -97,16 +101,39 @@ try
 				ctx.command='search'
 				ctx.query=p[0]
 				ctx.doActivate=true
+			when 'm'
+				ctx.command='javaScript'
+				ctx.javaScript='var $OSA$=document.getElementsByTagName("a");for(var i=0;i<$OSA$.length;i++){v=$OSA$[i];v.innerHTML="<span style=background-color:yellow>"+i+"</span>:"+v.innerHTML;}'
+			when 'M'
+				ctx.command='javaScript'
+				ctx.javaScript='var $OSA$=document.getElementsByTagName("input");for(var i=0;i<$OSA$.length;i++){v=$OSA$[i];var e=document.createElement("span");e.style="background-color:lightgreen";e.innerText=i;v.before(e);}'
+			when 'a'
+				ctx.command='javaScript'
+				index=Number(p[0])
+				ctx.javaScript="var $OSA$=document.getElementsByTagName('a');$OSA$[#{index}].click()"
+			when 'A'
+				ctx.command='javaScript'
+				index=Number(p[0])
+				ctx.javaScript="var $OSA$=document.getElementsByTagName('input');$OSA$[#{index}].click()"
+			when 'I'
+				ctx.text=p[0]
+			when 'b'
+				ctx.command='javaScript'
+				ctx.javaScript="window.history.back()"
 
 	if ctx.command is 'usage'
 		P """
 		## Command line
 		
-			#{AppName} [-u <username>] <command> [options]
+			#{AppName} [options]
 			
 			@PARTPIPE@DESCRIPTION@PARTPIPE@
 			
 			Copyright (C) 2019-@PARTPIPE@|date +%Y;@PARTPIPE@ @kssfilo(https://kanasys.com/gtech/)
+
+		## Prepare
+		
+		(*)You must enable the 'Allow JavaScript from Apple Events' option in Safari's Develop menu to use some features.
 
 		## Options
 
@@ -116,30 +143,54 @@ try
 		
 		### Get current URL on Safari
 
-		$ #{AppName}
-		https://github.com
+		    $ #{AppName}
+		    https://github.com
 
 		### Copy current URL on Safari to the clipboard
 		
-		$ #{AppName} -s
+		    $ #{AppName} -s
 
 		### Open specified URL on Safari
 		
-		$ #{AppName} -s 'http://github.com'
-		# withoug focus
+		    $ #{AppName} -s 'http://github.com'
+		    # withoug focus
 
-		$ #{AppName} -S 'http://github.com'
-		# with focus
+		    $ #{AppName} -S 'github.com'
+		    # with focus(omiting scheme->appends https://)
+
+		### Gets window title
+
+		    $ #{AppName} -t
+
+		### Navigating by command line
+		
+		    $ #{AppName} -m
+		    # marks all <a> with numbers
+		
+		    $ #{AppName} -a 32
+		    # click 32'th <a>
+
+		    $ #{AppName} -b
+		    # history back
+		
+		    $ #{AppName} -M
+		    # marks all <input> with numbers
+		
+		    $ #{AppName} -A 0 -I 'Japan'
+		    # Fill 0th input with 'Japan'
+
+		    $ #{AppName} -A 1
+		    # click 1st input button
 		
 		### Searchs Bing with word "Japan" (JavaScript injection)
 
-		$  #{AppName} -s 'https://bing.com'
-		$  #{AppName} -j 'document.getElementById("sb_form_q").value="Japan";document.getElementById("sb_form_go").click()'
+		    $  #{AppName} -s 'https://bing.com'
+		    $  #{AppName} -j 'document.getElementById("sb_form_q").value="Japan";document.getElementById("sb_form_go").click()'
 
 		### Print string in Bing search form
 		
-		$  #{AppName} -j 'document.getElementById("sb_form_q").value'
-		Japan
+		    $  #{AppName} -j 'document.getElementById("sb_form_q").value'
+		    Japan
 		"""
 
 		process.exit 0
@@ -152,11 +203,15 @@ try
 	if ctx.url && !ctx.url.match(/^https?:\/\//)
 		ctx.url="https://"+ctx.url
 
+	D "sanity checking.."
+	throw "-I works with -A" if ctx.text and !ctx.javaScript
+	if ctx.text and ctx.javaScript
+		D "CHECK"
+		ctx.javaScript=ctx.javaScript.replace(/click\(\)$/,"value='#{ctx.text}'")
+	D "..OK"
+	D "-------"
 	D "-options"
 	D "#{JSON.stringify ctx,null,2}"
-	D "-------"
-	D "sanity checking.."
-	D "..OK"
 
 	if ctx.isCheckCommand or ctx.isDebugMode
 		E "command:#{ctx.restCommand}" if ctx.restCommand?
@@ -181,7 +236,7 @@ try
 				P r
 
 		when 'printTitle'
-			OsaScript.execute "tell application \"safari\"\nfront document\nend tell",(e,r,w)=>
+			OsaScript.execute "tell application \"safari\"\nname of front document\nend tell",(e,r,w)=>
 				checkError e
 				P r
 
