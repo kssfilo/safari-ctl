@@ -1,0 +1,35 @@
+{
+  "@PARTPIPE@_@PARTPIPE@name": "@PARTPIPE@NAME@PARTPIPE@",
+  "description": "@PARTPIPE@DESCRIPTION@PARTPIPE@",
+  "main": "cli.js",
+  "license": "MIT",
+  "bin": {
+    "@PARTPIPE@BINNAME@PARTPIPE@": "./cli.js"
+  },
+  "@PARTPIPE@_@PARTPIPE@version": "@PARTPIPE@VERSION@PARTPIPE@",
+  "dependencies": {
+    "@kssfilo/getopt": "0.3.0",
+    "node-osascript": "2.1.0"
+  },
+  "devDependencies": {
+    "coffee-jshint": "1.1.1",
+    "coffeescript": "2.4.1",
+    "partpipe": "1.0.0",
+    "norl": "2.3.4"
+  },
+  "tags": [],
+  "keywords": [
+    "@PARTPIPE@KEYWORDS@PARTPIPE@"
+  ],
+  "author": {
+    "name": "@kssfilo",
+    "url": "https://kanasys.com/gtech/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kssfilo/@PARTPIPE@NAME@PARTPIPE@.git"
+  },
+  "engines": {
+    "node": ">=@PARTPIPE@NODEVER@PARTPIPE@"
+  }
+}
