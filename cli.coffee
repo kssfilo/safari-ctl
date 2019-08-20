@@ -31,6 +31,7 @@ ctx={
 	javaScript:null
 	query:null
 	text:null
+	dropResult:false
 }
 
 optUsages=
@@ -50,11 +51,14 @@ optUsages=
 	A:["number","click <number> input. you can know input number by -M command(*)"]
 	I:["string","works with -A, Input <string> instead of click. for filling form(*)"]
 	b:"history back(*)"
+	f:"history forward(*)"
+	n:"scroll to next page(*)"
+	N:"scroll to previous page (*)"
 	j:["javascript","run <javascript> on active tab(*)"]
 	J:["javascript","same as s but set focus to Safari(*)"]
 
 try
-	GetOpt.setopt 'h?dptgcs:S:q:Q:ma:MA:I:bj:J:'
+	GetOpt.setopt 'h?dptgcs:S:q:Q:ma:MA:I:bfnNj:J:'
 catch e
 	switch e.type
 		when 'unknown'
@@ -111,15 +115,29 @@ try
 				ctx.command='javaScript'
 				index=Number(p[0])
 				ctx.javaScript="var $OSA$=document.getElementsByTagName('a');$OSA$[#{index}].click()"
+				ctx.dropResult=true
 			when 'A'
 				ctx.command='javaScript'
 				index=Number(p[0])
 				ctx.javaScript="var $OSA$=document.getElementsByTagName('input');$OSA$[#{index}].click()"
+				ctx.dropResult=true
 			when 'I'
 				ctx.text=p[0]
+				ctx.dropResult=true
 			when 'b'
 				ctx.command='javaScript'
-				ctx.javaScript="window.history.back()"
+				ctx.javaScript="history.back()"
+			when 'f'
+				ctx.command='javaScript'
+				ctx.javaScript="history.forward()"
+			when 'n'
+				ctx.command='javaScript'
+				ctx.javaScript="window.scrollBy({top:window.innerHeight,left:0,behavior:'smooth'})"
+				ctx.dropResult=true
+			when 'N'
+				ctx.command='javaScript'
+				ctx.javaScript="window.scrollBy({top:-window.innerHeight,left:0,behavior:'smooth'})"
+				ctx.dropResult=true
 
 	if ctx.command is 'usage'
 		P """
@@ -262,7 +280,7 @@ try
 				checkError e
 				OsaScript.execute "tell application \"safari\"\ndo JavaScript TORUN in front document\nend tell",{TORUN:ctx.javaScript},(e,r,w)=>
 					checkError e
-					P r if r
+					P r if r and !ctx.dropResult
 
 catch e
 	E console.error e.toString()

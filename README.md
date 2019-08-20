@@ -63,8 +63,8 @@ You can see detail usage on npmjs.com
 ## Change Log
 
 - 0.1.x: beta release
+- 0.2.0: suppress result at anchor click/history forward/scroll
 
 ## Idea
 
-- history forward
 - marking buttons
